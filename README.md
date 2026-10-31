@@ -15,6 +15,9 @@ Muse の日常業務用ツールの保管庫です。トピックごとにフォ
 - `lefthook.yml` — pre-commit / pre-push で Betterleaks を回すフック定義
 - `.betterleaks.toml` — Betterleaks の既定ルールセットを使う設定
 - `.gitignore` — シークレット類と生成物を対象外にする設定
+- `flake.nix` / `flake.lock` — ランタイムと CLI ツールの版管理（Nix Flakes）。各リポジトリのルートに置くものと同じ内容
+
+なお、このリポジトリ自体のツール版管理もルートの `flake.nix`（+ `flake.lock`）が正です（`nix develop` で入ります）。Dependabot に Nix エコシステムは無いため、`flake.lock` の更新は定期ワークフロー `update-flake-lock` が PR で行います。
 
 新しいリポジトリは、原則としてテンプレートリポジトリ [muse-repo-template](https://github.com/kotaroAi-1031/muse-repo-template) から作ります（この `template/` はその内容の控えです）。
 
