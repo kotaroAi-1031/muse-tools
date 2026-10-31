@@ -1,7 +1,9 @@
 name: CI Lint
 
 # Hardened workflow linting:
-# - Top-level permissions are read-only; no job gets a write token.
+# - Top-level permissions are empty ({}); every job declares exactly
+#   the permissions it needs (contents: read for all jobs here), and
+#   no job gets a write token.
 # - Every action is pinned to a full commit SHA (Dependabot keeps them current).
 # - Every downloaded tool binary is pinned to a version and verified by SHA-256.
 # - Tool install steps never use untrusted event data in `run:` scripts.
@@ -12,12 +14,14 @@ on:
       - main
   pull_request:
 
-permissions:
-  contents: read
+permissions: {}
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  # Cancel superseded runs for pull requests only; runs triggered by
+  # pushes to main always finish, so a merged change is never left
+  # half-checked.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 defaults:
   run:
@@ -27,6 +31,8 @@ jobs:
   jactionlint:
     name: jactionlint (pedantic, all rules, with shellcheck and pyflakes)
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     timeout-minutes: 15
     steps:
       - name: Checkout
@@ -66,6 +72,8 @@ jobs:
   sisakulint:
     name: sisakulint (GitHub Actions SAST, non-duplicate rules)
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     timeout-minutes: 15
     steps:
       - name: Checkout
@@ -140,6 +148,8 @@ jobs:
   betterleaks:
     name: betterleaks (secret scan)
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     timeout-minutes: 15
     steps:
       - name: Checkout
