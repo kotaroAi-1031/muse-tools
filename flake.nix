@@ -156,10 +156,34 @@
           runHook postInstall
         '';
       };
+
+      # apm (Microsoft's Agent Package Manager) ships as a per-platform
+      # tarball holding the `apm` executable plus its `_internal`
+      # support tree (a PyInstaller one-folder bundle), so the whole
+      # tree is installed under lib/ and bin/apm links to it. The
+      # pinned hash was verified against the publisher's .sha256 file
+      # for the release asset and by hashing the downloaded artifact
+      # itself.
+      apm = pkgs.stdenvNoCC.mkDerivation {
+        pname = "apm";
+        version = "0.35.0";
+        src = pkgs.fetchurl {
+          url = "https://github.com/microsoft/apm/releases/download/v0.35.0/apm-linux-x86_64.tar.gz";
+          sha256 = "5aa23ce61eebae9411668f507772cdb5d87252c760078dc59b5acdc5188d785b";
+        };
+        installPhase = ''
+          runHook preInstall
+          mkdir -p $out/lib/apm $out/bin
+          cp -r . $out/lib/apm
+          chmod +x $out/lib/apm/apm
+          ln -s ../lib/apm/apm $out/bin/apm
+          runHook postInstall
+        '';
+      };
     in
     {
       packages.${system} = {
-        inherit gh pnpm jactionlint sisakulint betterleaks lefthook yt-dlp gh-share;
+        inherit gh pnpm jactionlint sisakulint betterleaks lefthook yt-dlp gh-share apm;
         # Re-exported from the locked nixpkgs so CI can pull exactly
         # these (and only these) per job via `nix shell`.
         nodejs_26 = pkgs.nodejs_26;
@@ -183,6 +207,7 @@
           lefthook
           yt-dlp
           gh-share
+          apm
           # jactionlint runs its pyflakes integration when pyflakes is on PATH.
           pkgs.python312Packages.pyflakes
         ];

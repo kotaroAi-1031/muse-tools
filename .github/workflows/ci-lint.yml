@@ -196,3 +196,27 @@ jobs:
         timeout-minutes: 20
         run: nix shell .#gh-share --command gh-share --help
 
+  apm:
+    name: apm (binary runs)
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        timeout-minutes: 5
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install Nix
+        timeout-minutes: 5
+        uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
+
+      # Building the package through Nix verifies the pinned sha256
+      # against the official release asset; running it smoke-tests
+      # the binary the devShell ships.
+      - name: Build apm from the flake and smoke test it
+        timeout-minutes: 20
+        run: nix shell .#apm --command apm --version
+
