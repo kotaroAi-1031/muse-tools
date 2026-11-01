@@ -19,8 +19,12 @@ Muse の日常業務用ツールの保管庫です。トピックごとにフォ
 
 なお、このリポジトリ自体のツール版管理もルートの `flake.nix`（+ `flake.lock`）が正です（`nix develop` で入ります）。Dependabot に Nix エコシステムは無いため、`flake.lock` の更新は定期ワークフロー `update-flake-lock` が PR で行います。
 
+例外は `gh-share/` の gh-share です。版の正は `gh-share/go.mod`（Go tools パターン）で、Dependabot（gomod）が更新 PR を立てます。`flake.nix` にも同じ版の derivation がありますが、そちらは Dependabot の対象外なので、PR をマージする前に版とハッシュを揃える必要があります（CI の gh-share ジョブが一致を検査します。詳細は `gh-share/README.md`）。
+
 新しいリポジトリは、原則としてテンプレートリポジトリ [muse-repo-template](https://github.com/kotaroAi-1031/muse-repo-template) から作ります（この `template/` はその内容の控えです）。
 
 ## 中身
 
 トピックごとのフォルダを随時追加します。
+
+- `gh-share/` — gh 拡張 gh-share（k1LoW/gh-share）の導入とバージョン管理。版の正は同フォルダの `go.mod` で、Dependabot が更新します。
