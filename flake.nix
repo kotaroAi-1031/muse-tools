@@ -173,8 +173,8 @@
         };
         installPhase = ''
           runHook preInstall
-          mkdir -p $out/lib $out/bin
-          cp -r apm-linux-x86_64 $out/lib/apm
+          mkdir -p $out/lib/apm $out/bin
+          cp -r . $out/lib/apm
           chmod +x $out/lib/apm/apm
           ln -s ../lib/apm/apm $out/bin/apm
           runHook postInstall
