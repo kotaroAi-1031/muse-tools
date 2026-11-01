@@ -151,3 +151,48 @@ jobs:
         timeout-minutes: 20
         run: nix shell .#betterleaks --command betterleaks git --redact --verbose .
 
+  gh-share:
+    name: gh-share (flake pin matches go.mod, binary runs)
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        timeout-minutes: 5
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install Nix
+        timeout-minutes: 5
+        uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
+
+      # gh-share's canonical version is the require in gh-share/go.mod
+      # (Dependabot gomod opens its update PRs). The fixed-output pin
+      # in flake.nix must name the same version; while the two
+      # disagree this check fails, so a Dependabot PR cannot be merged
+      # until the flake pin (version and sha256) is bumped to match.
+      - name: Check flake pin matches go.mod
+        timeout-minutes: 5
+        run: |
+          gomod_version="$(awk '$1 == "require" && $2 == "github.com/k1LoW/gh-share" { print $3 }' gh-share/go.mod)"
+          flake_version="$(awk '/gh-share = pkgs.stdenvNoCC.mkDerivation/ { in_block = 1 } in_block && /version = / { gsub(/[";]/, "", $3); print $3; exit }' flake.nix)"
+          if [ -z "${gomod_version}" ] || [ -z "${flake_version}" ]; then
+            echo "Could not extract gh-share versions (go.mod: '${gomod_version}', flake.nix: '${flake_version}')."
+            exit 1
+          fi
+          if [ "${gomod_version}" != "v${flake_version}" ]; then
+            echo "gh-share version mismatch: gh-share/go.mod has ${gomod_version} but flake.nix pins ${flake_version}."
+            echo "Bump the gh-share derivation in flake.nix (version and sha256) to match go.mod before merging."
+            exit 1
+          fi
+          echo "gh-share versions in sync: ${gomod_version}"
+
+      # Building the package through Nix verifies the pinned sha256
+      # against the official release asset; running it smoke-tests
+      # the binary the devShell ships.
+      - name: Build gh-share from the flake and smoke test it
+        timeout-minutes: 20
+        run: nix shell .#gh-share --command gh-share --help
+

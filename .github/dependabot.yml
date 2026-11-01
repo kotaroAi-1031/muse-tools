@@ -12,6 +12,12 @@
 # Nix note: Dependabot has no Nix ecosystem. flake.lock updates are
 # handled by the scheduled update-flake-lock workflow instead
 # (.github/workflows/update-flake-lock.yml).
+#
+# gh-share exception: gh-share's canonical version is the require in
+# gh-share/go.mod (Go tools pattern), so the gomod ecosystem below
+# opens its update PRs. The matching pin in flake.nix is not covered
+# by Dependabot and must be bumped to the same version before such a
+# PR is merged; CI's gh-share job fails while the two disagree.
 version: 2
 updates:
   - package-ecosystem: "github-actions"
@@ -24,5 +30,18 @@ updates:
       default-days: 3
     groups:
       github-actions:
+        patterns:
+          - "*"
+  - package-ecosystem: "gomod"
+    directory: "/gh-share"
+    schedule:
+      interval: "daily"
+      time: "09:00"
+      timezone: "Asia/Tokyo"
+    cooldown:
+      default-days: 3
+      semver-major-days: 7
+    groups:
+      gomod:
         patterns:
           - "*"
