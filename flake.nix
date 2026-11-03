@@ -133,30 +133,6 @@
         '';
       };
 
-      # gh-share ships as a bare per-platform binary. Unlike the other
-      # pins here, its canonical version lives in gh-share/go.mod and is
-      # kept current by Dependabot (gomod ecosystem); this derivation
-      # must be bumped to the same version (version + sha256) whenever
-      # a Dependabot PR for it is merged. The pinned hash is the
-      # publisher's release digest for the linux-amd64 asset (also
-      # shown as the asset digest by the GitHub API). CI enforces that
-      # this version matches gh-share/go.mod (see the gh-share job in
-      # .github/workflows/ci-lint.yml and gh-share/README.md).
-      gh-share = pkgs.stdenvNoCC.mkDerivation {
-        pname = "gh-share";
-        version = "0.5.2";
-        src = pkgs.fetchurl {
-          url = "https://github.com/k1LoW/gh-share/releases/download/v0.5.2/linux-amd64";
-          sha256 = "ff6c34d9d2cbd045a9ac1a7f01ed8599ec58c30d616c390cf1a37d94a1444f20";
-        };
-        dontUnpack = true;
-        installPhase = ''
-          runHook preInstall
-          install -Dm755 $src $out/bin/gh-share
-          runHook postInstall
-        '';
-      };
-
       # apm (Microsoft's Agent Package Manager) ships as a per-platform
       # tarball holding the `apm` executable plus its `_internal`
       # support tree (a PyInstaller one-folder bundle), so the whole
@@ -183,7 +159,7 @@
     in
     {
       packages.${system} = {
-        inherit gh pnpm jactionlint sisakulint betterleaks lefthook yt-dlp gh-share apm;
+        inherit gh pnpm jactionlint sisakulint betterleaks lefthook yt-dlp apm;
         # Re-exported from the locked nixpkgs so CI can pull exactly
         # these (and only these) per job via `nix shell`.
         nodejs_26 = pkgs.nodejs_26;
@@ -206,7 +182,6 @@
           betterleaks
           lefthook
           yt-dlp
-          gh-share
           apm
           # jactionlint runs its pyflakes integration when pyflakes is on PATH.
           pkgs.python312Packages.pyflakes
