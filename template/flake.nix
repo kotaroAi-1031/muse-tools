@@ -15,8 +15,10 @@
       # its SHA-256 pinned here, so Nix verifies the content exactly like
       # the previous curl + sha256sum steps in CI did. The pinned hashes
       # were verified against the publishers' own checksum files where
-      # those exist (gh, lefthook) or taken from the previously
-      # CI-verified downloads (jactionlint, sisakulint, betterleaks).
+      # those exist (gh, lefthook), taken from the previously
+      # CI-verified downloads (jactionlint, sisakulint, betterleaks),
+      # or read from the publisher's own release manifest (agy, whose
+      # pin below is a SHA-512 for that reason).
 
       # GitHub CLI (used for GitHub operations and the Alchemy program).
       gh = pkgs.stdenvNoCC.mkDerivation {
@@ -156,10 +158,40 @@
           runHook postInstall
         '';
       };
+
+      # agy (Google Antigravity CLI) ships as a tarball holding a
+      # single flat native binary named `antigravity`, installed here
+      # as `agy`. Google publishes no versioned download page or
+      # checksum file, and its official installer resolves a live
+      # release manifest at install time; this pin deliberately does
+      # NOT do that. The URL below is the immutable 1.5.2 payload on
+      # Google's own storage, and the SHA-512 is the one Google's
+      # release manifest (manifests/linux_amd64.json on the
+      # Antigravity auto-updater endpoint) published for it,
+      # cross-checked two ways: the downloaded tarball hashes to
+      # exactly this value, and the binary inside it is byte-identical
+      # to the `agy` the official installer had already placed on this
+      # machine. Note that agy self-updates in the background during
+      # regular runs (Google's design), so this pin governs the
+      # initial install only.
+      agy = pkgs.stdenvNoCC.mkDerivation {
+        pname = "agy";
+        version = "1.5.2";
+        src = pkgs.fetchurl {
+          url = "https://storage.googleapis.com/antigravity-public/antigravity-cli/1.5.2-4951595792859136/linux-x64/cli_linux_x64.tar.gz";
+          sha512 = "aa876c0813572efaf85ed47983cc937414705d40490cbdb54f6e255656a4f8744ae38e457823e924fa8270b348124e0521d3cda3fec6824bb2d14b98a7a05baa";
+        };
+        sourceRoot = ".";
+        installPhase = ''
+          runHook preInstall
+          install -Dm755 antigravity $out/bin/agy
+          runHook postInstall
+        '';
+      };
     in
     {
       packages.${system} = {
-        inherit gh pnpm jactionlint sisakulint betterleaks lefthook yt-dlp apm;
+        inherit gh pnpm jactionlint sisakulint betterleaks lefthook yt-dlp apm agy;
         # Re-exported from the locked nixpkgs so CI can pull exactly
         # these (and only these) per job via `nix shell`.
         nodejs_26 = pkgs.nodejs_26;
@@ -183,6 +215,7 @@
           lefthook
           yt-dlp
           apm
+          agy
           # jactionlint runs its pyflakes integration when pyflakes is on PATH.
           pkgs.python312Packages.pyflakes
         ];
