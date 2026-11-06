@@ -7,8 +7,9 @@ name: CI Lint
 # - Every action is pinned to a full commit SHA (Dependabot keeps them current).
 # - Tool versions are managed by the repository flake: flake.lock pins
 #   the nixpkgs revision, and the custom tool derivations in flake.nix
-#   pin the official release artifacts by SHA-256 (fixed-output
-#   fetches, verified by Nix). Jobs install Nix with the pinned
+#   pin the official release artifacts by hash (SHA-256, or SHA-512
+#   where that is what the publisher's own manifest publishes, as for
+#   agy; fixed-output fetches, verified by Nix). Jobs install Nix with the pinned
 #   installer action and pull exactly the tools they need via
 #   `nix shell`.
 # - Tool install steps never use untrusted event data in `run:` scripts.
@@ -174,4 +175,28 @@ jobs:
       - name: Build apm from the flake and smoke test it
         timeout-minutes: 20
         run: nix shell .#apm --command apm --version
+
+  agy:
+    name: agy (binary runs)
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        timeout-minutes: 5
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install Nix
+        timeout-minutes: 5
+        uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
+
+      # Building the package through Nix verifies the pinned sha512
+      # against Google's official release payload; running it
+      # smoke-tests the binary the devShell ships.
+      - name: Build agy from the flake and smoke test it
+        timeout-minutes: 20
+        run: nix shell .#agy --command agy --version
 
